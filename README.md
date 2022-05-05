@@ -82,7 +82,7 @@ For upgrade logic that uses Netmiko, it will also be show in here. To find out w
 
 
 ## Deployment
-###Repo & Python installation
+### Repo & Python installation
 To deploy this software you will need to first clone the repo, and install all required python modules, as stated in `requirements.txt`
 
 The recommended method for this is:
@@ -91,13 +91,13 @@ pipenv install
 pipenv shell
 pip install -r requirements.txt
 ```
-###Environement Variables
+### Environement Variables
 To run the upgrader using additional features, such as the authentication engine & notification engine, you will need to complete additional setup.
 This will come in the form of environment variables, and/or additional config inside the `settings.toml` file.
 
 To know which environment variables to add, go to each plugin. Each plugin will have a readme, containing the specifics for how to configure them.
 
-###Inventory files
+### Inventory files
 Complete the configuration of the inventory, using the guide above to help you.
 
 ### Firmware
