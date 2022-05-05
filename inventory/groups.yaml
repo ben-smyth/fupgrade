@@ -1,0 +1,46 @@
+---
+osv8:
+  data:
+    target_version: '20_2_1'
+    upgrade_path:
+      - upgrade: 1
+        firmware_location: 'firmware/mrv/os-v/20.2.1/'
+        firmware_file_name: 'OS-V-20_2_1.17875.ver'
+os940:
+  data:
+    target_version: '4_5_6'
+    upgrade_path:
+      - upgrade: 1
+        firmware_location: 'firmware/mrv/os9XX/4_5_6/OS90x/'
+        firmware_file_name: 'os900-4_5_6.ver'
+os960:
+  data:
+    target_version: '4_5_6'
+    upgrade_path:
+      - upgrade: 1
+        firmware_location: 'firmware/mrv/os9XX/4_5_6/OS90x/'
+        firmware_file_name: 'os900-4_5_6.ver'
+os904:
+  data:
+    target_version: '4_5_6'
+    upgrade_path:
+      - upgrade: 1
+        firmware_location: 'firmware/mrv/os9XX/4_5_6/OS90x/'
+        firmware_file_name: 'os900-4_5_6.ver'
+os906:
+  data:
+    target_version: '4_5_6'
+    upgrade_path:
+      - upgrade: 1
+        firmware_location: 'firmware/mrv/os9XX/4_5_6/OS90x/'
+        firmware_file_name: 'os900-4_5_6.ver'
+srx110:
+  data:
+    target_version: '12.3X48-D85'
+    upgrade_path:
+      - upgrade: 1
+        firmware_location:
+        firmware_file_name:
+      - upgrade: 2
+        firmware_location:
+        firmware_file_name:

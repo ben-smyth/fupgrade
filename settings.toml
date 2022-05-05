@@ -1,0 +1,21 @@
+[settings]
+notifications=['slack']                     # List of notification services - string of the Class Name
+authentication_engine='HVACAuthentication'                # A single authentication engine class
+
+
+[notification-slack]
+channel=['#bens']                           # slack channel(s) to send notification to
+
+
+[authentication-hvac]                       # HVAC Authentication Settings
+device = {'username'='firmware.upgrader', 'password_url'='secret/systems/firmware-upgrader'}
+scp = {'username'='scp','password_url'=''}
+
+
+[upgrade-mappings]                          # Mappings from group names to Upgrade class
+'os904'='MRVUpgrader'
+'os940'='MRVUpgrader'
+'os906'='MRVUpgrader'
+'os960'='MRVUpgrader'
+'osv8'='MRVUpgrader'
+'srx110'='JunOSUpgrader'

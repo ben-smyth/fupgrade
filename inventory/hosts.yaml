@@ -1,0 +1,7 @@
+---
+host1:
+  hostname: host
+  groups:
+    - os904
+  username: admin
+  password: admin

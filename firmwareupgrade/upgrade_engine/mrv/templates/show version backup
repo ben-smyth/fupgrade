@@ -1,0 +1,6 @@
+Value primary ([^\W]*)
+Value backup ([^\W]*)
+
+Start
+	^\s+Backup Partition:[\W]* ${backup}
+	^\s+Current Partition:[\W]* ${primary}

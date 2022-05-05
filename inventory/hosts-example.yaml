@@ -1,0 +1,25 @@
+# call the real file 'hosts.yaml'
+---
+host1:
+  #host = hostname of device
+  host: MR-OS904-I-1-LDP05-GB
+
+  #groups maps it to its model inside the "/inventory/groups.yaml"
+  #this is what provides the upgrade information like firmware,
+  groups:
+    - os904
+
+  #OPTIONAL, provide a username and password for host with non-typical credentials. Otherwise will use authentication method
+  credentials:
+    username: admin
+    password: admin
+  #OPTIONAL, specify different target versions or firmware file to the group
+  data:
+    authentication_method: hvac
+    target_version: 4_5_6
+    firmware_location: /firmware/mrv/os960/
+    firmware_file_name: os960_4_5_6
+host2:
+  host: MR-OSV8-I-1-LDP69-GB
+  groups:
+    - osv8

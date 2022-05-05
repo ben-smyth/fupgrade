@@ -1,0 +1,231 @@
+#!/usr/bin/env python3
+from firmwareupgrade.upgrade_engine.engine import UpgradeEngine
+from firmwareupgrade.authentication_engine.engine import AuthenticationEngine
+from firmwareupgrade.lib.inventory_management import full_checks
+
+from nornir import InitNornir
+from nornir_utils.plugins.functions import print_result
+from nornir.core.task import Task, Result
+
+from datetime import datetime
+
+import logging
+import os
+import click
+
+from config import settings
+
+
+##################
+# CLICK COMMANDS #
+##################
+@click.group()
+def all_commands():
+    pass
+
+
+@all_commands.command(short_help='"upgrader upgrade --help" to see more')
+@click.option("--host", '-h', default=None, help="Specify single host to upgrade - must also be in inventory file.", metavar='<host>')
+@click.option("--schedule", '-s', default=None, help="Schedule upgrade [not implemented]", metavar='<HH/MM/dd/mm/yy>')
+@click.option("--alarmoff", '-a', default=False, help="Do not invoke the notification engine.", is_flag=True)
+def upgrade(host,schedule,alarmoff):
+    """
+    Execute firmware upgrades.
+    """
+    configure_logging()
+
+    nn = _init_nornir()
+
+    if host is not None:
+        print(f"\nFiltering list by: {host}\n")
+        nn = nn.filter(hostname=host)
+        if len(nn.inventory.hosts) == 0:
+            print("Filter eliminated all hosts. Exiting...")
+            exit()
+
+
+    # Initial inventory checks
+    print(f"Running initial checks in hosts: \n")
+    initial_checks = _inventory_checks(nn)
+
+    print_result(initial_checks)
+
+    if initial_checks.failed == True:
+        print("\n\nThe following hosts have failed initial checks:")
+        for i in initial_checks.failed_hosts:
+            print(f"{nn.inventory.hosts.get(i).hostname}")
+        print(f"\n\nPlease resolve Inventory errors shown above before proceeding. ENDING EXEXCUTION...\n\n")
+        exit()
+
+
+    # Confirming upgrade
+    print("The following devices are set to be upgraded: ")
+    for i in nn.inventory.hosts:
+        print(f"    {nn.inventory.hosts.get(i).hostname} - upgraded to {nn.inventory.hosts.get(i).extended_data()['target_version']}")
+
+    get_confirmation()
+
+    # Pre Upgrade Checks
+    print(f"\n\n GATHERING PRE-UPGRADE IMAGE...")
+    pre_upgrade_results = nn.run(
+        name="DEVICE UPGRADE",
+        task=pre_upgrade
+    )
+    print_result(pre_upgrade_results)
+
+    # Upgrade hosts
+    print(f"\n\n STARTING DEVICE UPGRADES...")
+    upgrade_results = nn.run(
+        name="DEVICE UPGRADE",
+        task=execute_upgrades
+    )
+    print_result(upgrade_results)
+
+    # Post Upgrade Checks
+
+    print(f"\n\n STARTING POST UPGRADE CHECKS...")
+    post_upgrade_results = nn.run(
+        name="POST UPGRADE CHECKS",
+        task=post_upgrade
+    )
+    print_result(post_upgrade_results)
+
+@all_commands.command(short_help='"upgrader check --help" to see more')
+@click.option('--auth',help="Check the configured authorisation methods",is_flag=True)
+@click.option('--inv',help="Check the inventory",is_flag=True)
+def check(auth,inv):
+    configure_logging()
+    if inv:
+        init_inventory()
+
+
+    if auth:
+        a = AuthenticationEngine().test_auth()
+        if a:
+            print("Check Successful...")
+        else:
+            print("Check Failed")
+
+    exit(0)
+
+
+@all_commands.command(short_help='"upgrader test --help" to see more')
+def test():
+    """
+    Test route for short-lived commands/testing purposes
+    """
+    a = AuthenticationEngine()
+    creds = a.get_device_creds()
+    print(creds)
+
+
+#####################
+# GENERAL FUNCTIONS #
+#####################
+def _init_nornir():
+    """
+    Init NorNir
+    :return NorNir Object
+    """
+    return InitNornir(
+        config_file='inventory/nornir-config.yaml'
+    )
+
+
+def _inventory_checks(nornir_object):
+    """
+    Check all items in the inventory
+
+    :param nornir_object
+    :return: result of full checks
+    """
+    print("\nRUNNING INVENTORY CHECKS...\n")
+    result = nornir_object.run(
+        name="CHECKING INVENTORY",
+        task = full_checks
+    )
+    return result
+
+
+def init_inventory():
+    nn = _init_nornir()
+    inv_checks = _inventory_checks(nn)
+    print_result(inv_checks)
+    if inv_checks.failed == True:
+        print("\n\nThe following hosts have failed initial checks:")
+        for i in inv_checks.failed_hosts:
+            print(f"{nn.inventory.hosts.get(i).hostname}")
+        print(f"\n\nPlease resolve Inventory errors shown above before proceeding. ENDING EXEXCUTION...\n\n")
+        exit()
+    return nn
+
+
+def configure_logging():
+    if os.path.exists("logs/"):
+        pass
+    else:
+        os.mkdir("logs")
+    if os.path.exists("logs/shell_output"):
+        pass
+    else:
+        os.mkdir("logs/shell_output")
+
+    today = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+
+    logging.getLogger("nornir").setLevel(logging.DEBUG)
+    logging.getLogger("paramiko").setLevel(logging.DEBUG)
+    logging.getLogger("netmiko").setLevel(logging.DEBUG)
+    logging.basicConfig(filename=f'logs/upgrade-{today}.log',
+                        level=logging.DEBUG,
+                        format='%(asctime)s - %(thread)d:%(threadName)s - %(levelname)s %(name)s: %(message)s',
+                        datefmt='%Y-%m-%d-%H:%M:%S')
+
+
+def get_confirmation():
+    confirmation = str(input("\nProceed? [y/n]: ")).lower()
+    if confirmation == 'y':
+        pass
+    else:
+        print("\n Ending execution...")
+        exit()
+
+
+################
+# NORNIR TASKS #
+################
+def execute_upgrades(task: Task) -> Result:
+    """
+    Task to run upgrades for a device
+    :param task:
+    :return: Result:
+    """
+    upgrade = UpgradeEngine(task)
+    upgrade.upgrade()
+    return Result(host=task.host)
+
+
+def pre_upgrade(task: Task) -> Result:
+    upgrade = UpgradeEngine(task)
+    checks = upgrade.pre_upgrade_checks()
+
+    return Result(
+        host=task.host,
+        result = f"{checks}"
+    )
+
+
+def post_upgrade(task: Task) -> Result:
+    upgrade = UpgradeEngine(task)
+    checks = upgrade.post_upgrade_checks()
+
+    return Result(
+        host=task.host,
+        result = f"{checks}"
+    )
+
+
+##################
+# MAIN EXECUTION #
+##################
+if __name__=='__main__':
+    all_commands()
