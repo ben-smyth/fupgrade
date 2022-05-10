@@ -8,6 +8,7 @@ from nornir_utils.plugins.functions import print_result
 from nornir.core.task import Task, Result
 
 from datetime import datetime
+from api import southbound
 
 import logging
 import os
@@ -28,13 +29,16 @@ def all_commands():
 @click.option("--host", '-h', default=None, help="Specify single host to upgrade - must also be in inventory file.", metavar='<host>')
 @click.option("--schedule", '-s', default=None, help="Schedule upgrade [not implemented]", metavar='<HH/MM/dd/mm/yy>')
 @click.option("--alarmoff", '-a', default=False, help="Do not invoke the notification engine.", is_flag=True)
-def upgrade(host,schedule,alarmoff):
+@click.option('--version',help="Get the device version only",is_flag=True)
+@click.option('--pre_checks',help="Execute device pre-checks and pre-image",is_flag=True)
+def upgrade(host,schedule,alarmoff,version,pre_checks):
     """
     Execute firmware upgrades.
     """
     configure_logging()
 
     nn = _init_nornir()
+
 
     if host is not None:
         print(f"\nFiltering list by: {host}\n")
@@ -57,6 +61,19 @@ def upgrade(host,schedule,alarmoff):
         print(f"\n\nPlease resolve Inventory errors shown above before proceeding. ENDING EXEXCUTION...\n\n")
         exit()
 
+    # Just gather the version
+    print(f"\n\nGETTING DEVICE VERSIONS...")
+    if version:
+        versions=nn.run(
+            name="GETTING VERSION...",
+            task=get_version
+        )
+        print_result(versions)
+        exit()
+
+    # Just perform pre-upgrade checks
+    if pre_checks:
+        pass
 
     # Confirming upgrade
     print("The following devices are set to be upgraded: ")
@@ -65,10 +82,14 @@ def upgrade(host,schedule,alarmoff):
 
     get_confirmation()
 
+    # Testing Auth Engine
+    print(f"\n\n TESTING AUTHENTICATION ENGINE...")
+    test_auth()
+
     # Pre Upgrade Checks
     print(f"\n\n GATHERING PRE-UPGRADE IMAGE...")
     pre_upgrade_results = nn.run(
-        name="DEVICE UPGRADE",
+        name="GETTING DEVICE IMAGE",
         task=pre_upgrade
     )
     print_result(pre_upgrade_results)
@@ -100,11 +121,7 @@ def check(auth,inv):
 
 
     if auth:
-        a = AuthenticationEngine().test_auth()
-        if a:
-            print("Check Successful...")
-        else:
-            print("Check Failed")
+        test_auth()
 
     exit(0)
 
@@ -190,9 +207,31 @@ def get_confirmation():
         exit()
 
 
+def test_auth():
+    a = AuthenticationEngine().test_auth()
+    if a:
+        print("Auth Check Successful...")
+    else:
+        print("Auth Check Failed...")
+        exit()
+
+
 ################
 # NORNIR TASKS #
 ################
+def get_version(task: Task) -> Result:
+    """
+    Task to run upgrades for a device
+    :param task:
+    :return: Result:
+    """
+    upgrade = UpgradeEngine(task)
+    result = upgrade.get_device_version()
+    return Result(
+        host=task.host,
+        result=result
+    )
+
 def execute_upgrades(task: Task) -> Result:
     """
     Task to run upgrades for a device

@@ -46,9 +46,9 @@ class UpgradeEngine:
             creds['device']['username'] = self.task.host.username
             creds['device']['password'] = self.task.host.password
         else:
-            device_creds = authengine.getdevicecreds()
-            creds['device']['username'] = device_creds['username']
-            creds['device']['password'] = device_creds['password']
+            device_creds = authengine.get_device_creds()
+            creds['device']['username'] = device_creds['device']['username']
+            creds['device']['password'] = device_creds['device']['password']
 
 
         return creds

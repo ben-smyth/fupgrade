@@ -1,0 +1,7 @@
+firmware/
+logs/
+
+.idea/*
+Pipfile
+Pipfile.lock
+*.pyc
