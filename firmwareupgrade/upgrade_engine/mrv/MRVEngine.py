@@ -25,7 +25,13 @@ class MRVUpgrader(BaseDevice):
 
         self.connection = ConnectHandler(**device)
 
-    def get_storage_space(self):
+    def _get_interface(self):
+        pass
+
+    def _get_mac_address(self):
+        pass
+
+    def _get_lldp_neighbours(self):
         pass
 
     def get_version(self, already_connected=False):
@@ -49,17 +55,24 @@ class MRVUpgrader(BaseDevice):
         # Get MAC addresses
         pass
 
+
     def execute_upgrade(self):
         def upgrade_logic(self,backup_upgrade=False):
             # create device connection
             self._connect_to_device()
+
+            print(f"{self.hostname} - Writing to memory")
+            self.connection.send_command(
+                f"write mem")
+
             # SCP PUT
             print(f"{self.hostname} - Uploading SCP file")
             scp_channel = SCPConn(self.connection)
             scp_channel.establish_scp_conn()
             scp_channel.scp_put_file(self.firmware_full_path, f"/tmp/{self.firmware_file_name}")
 
-            print(f"Installing firmware on {self.hostname}")
+
+            print(f"{self.hostname} - Installing firmware")
             self.connection.send_command(
                 f"upgrade file {self.firmware_file_name}",
                 expect_string="\(y\|n\)",
