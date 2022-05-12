@@ -1,4 +1,4 @@
-# Sohonet Firmware Upgrader
+# Firmware Upgrader
 
 The firmware upgrader is a pluggable software which deals with:
 
