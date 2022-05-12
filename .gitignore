@@ -5,3 +5,4 @@ logs/
 Pipfile
 Pipfile.lock
 *.pyc
+.vars.env

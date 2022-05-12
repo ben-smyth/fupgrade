@@ -1,0 +1,4 @@
+firmware/
+logs/
+.idea/
+.vars.env

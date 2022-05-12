@@ -1,0 +1,10 @@
+version: "3"
+services:
+  fupgrade:
+    build: .
+    container_name: fupgrade
+    env_file:
+      - ./.vars.env
+    volumes:
+      - ./firmware:/app/firmware
+      - ./logs:/app/logs
